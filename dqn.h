@@ -13,9 +13,7 @@ public:
 	DeepQNetworkImpl(const double learningRate, const int inputDims, const std::vector<int>& fcDims, const int actionsNum, const NetworkMode mode,
 		const torch::Device& device = torch::cuda::is_available() ? torch::kCUDA : torch::kCPU);
 	DeepQNetworkImpl() = delete; //we don't do that here
-	~DeepQNetworkImpl();
 	torch::Tensor forward(const torch::Tensor& state);
-
 
 private:
 	const double learningRate;

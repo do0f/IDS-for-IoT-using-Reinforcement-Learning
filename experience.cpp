@@ -5,10 +5,6 @@ Experience::Experience(const torch::Tensor& state, const long long action, const
 	experience(std::make_tuple(state, action, reward, newState, done))
 {
 }
-Experience::~Experience()
-{
-}
-
 
 ExperienceMemory::ExperienceMemory(const std::size_t capacity) : capacity(capacity)
 {
@@ -17,7 +13,6 @@ ExperienceMemory::ExperienceMemory(const std::size_t capacity) : capacity(capaci
 	memoryIndexes.reserve(capacity);
 }
 
-ExperienceMemory::~ExperienceMemory() {}
 void ExperienceMemory::push(const Experience& experience)
 {
 	if (memory.size() < capacity)

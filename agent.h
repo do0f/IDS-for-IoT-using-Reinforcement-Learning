@@ -14,10 +14,10 @@ public:
 	Agent() = delete;
 	~Agent();
 
-	int chooseAction(const torch::Tensor& state, DeepQNetwork policyNet);
+	int chooseAction(const torch::Tensor& state, DeepQNetwork& policyNet);
 	void storeExperience(const Experience& experience);
 
-	void learn(DeepQNetwork policyNet, DeepQNetwork targetNet, torch::optim::Adam& optimizer);
+	void learn(DeepQNetwork& policyNet, DeepQNetwork& targetNet, torch::optim::Adam& optimizer);
 
 private:
 	const double gamma;

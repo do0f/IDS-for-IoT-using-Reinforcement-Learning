@@ -25,7 +25,6 @@ class Enviroment
 public:
 	Enviroment(const std::string& file, OperatingMode mode);
 	Enviroment() = delete;
-	~Enviroment() {}
 	void reset();
 	double step(int action);
 	std::vector<float> Enviroment::getState();

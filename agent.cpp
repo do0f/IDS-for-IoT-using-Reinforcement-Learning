@@ -17,7 +17,7 @@ Agent::~Agent()
 	std::clog << "Finished training" << std::endl;
 }
 
-int Agent::chooseAction(const torch::Tensor& state, DeepQNetwork policyNet)
+int Agent::chooseAction(const torch::Tensor& state, DeepQNetwork& policyNet)
 {
 	double rand = std::rand();
 	if (epsilon > epsilonEnd)
@@ -40,7 +40,7 @@ void Agent::storeExperience(const Experience& experience)
 	this->memory->push(experience);
 }
 
-void Agent::learn(DeepQNetwork policyNet, DeepQNetwork targetNet, torch::optim::Adam& optimizer)
+void Agent::learn(DeepQNetwork& policyNet, DeepQNetwork& targetNet, torch::optim::Adam& optimizer)
 {
 	if (memory->canProvideSample(batchSize))
 	{
@@ -53,20 +53,14 @@ void Agent::learn(DeepQNetwork policyNet, DeepQNetwork targetNet, torch::optim::
 
 		memory->sample(batchSize, states, actions, rewards, dones, newStates);
 		
-		auto statesTensor = torch::stack({ states });
-		auto newStatesTensor = torch::stack({ newStates });
-		
-		/*std::cout << "statesTensor " << statesTensor << std::endl;
-		std::cout << "actionsTensor " << actionsTensor << std::endl;
-		std::cout << "rewardsTensor " << rewardsTensor << std::endl;
-		std::cout << "newStatesTensor " << newStatesTensor << std::endl;*/
+		auto statesTensor = torch::stack({ states }).to(this->device);
+		auto newStatesTensor = torch::stack({ newStates }).to(this->device);
 
 		//auto currentQValues = policyNet->forward(statesTensor).gather(2, actionsTensor.unsqueeze(-1)).squeeze(-1);
-		auto currentQValues = policyNet->forward(statesTensor);
+		auto currentQValues = policyNet->forward(statesTensor).to(this->device);
 		//std::cout << "cur Q" << currentQValues << std::endl;
 
-		
-		auto nextQValues = targetNet->forward(newStatesTensor);
+		auto nextQValues = targetNet->forward(newStatesTensor).to(this->device);
 		//std::cout << "next Q" << nextQValues << std::endl;
 		for (auto i = 0; i < batchSize; i++)
 		{
@@ -74,40 +68,20 @@ void Agent::learn(DeepQNetwork policyNet, DeepQNetwork targetNet, torch::optim::
 				for (auto j = 0; j < actionsNum; ++j)
 					nextQValues[i][0][j] = 0.0;
 		}
-		auto nextQValuesMaxValues = std::get<0>(nextQValues.max(2));
+		auto nextQValuesMaxValues = std::get<0>(nextQValues.max(2)).to(this->device);
 		//std::cout << "next Q" << nextQValues << std::endl;
-	
-		//nextQValues = nextQValues.detach();
-
-		
-			auto targetQValues = currentQValues.clone();
-
-			//std::cout << "target Q" << targetQValues << std::endl;
-			for (auto i = 0; i < batchSize; i++)
-			{
-				targetQValues[i][0][actions[i]] = (nextQValuesMaxValues[i][0] * gamma + rewards[i]);
-			}
-		/*	std::cout << "target Q" << targetQValues << std::endl;
-			std::cout << "CURRENT Q" << currentQValues;*/
-
-
-			/*auto k = policyNet->parameters();
-			for (auto& g : k)
-			{
-				std::cout << g;
-			}*/
-			auto loss = torch::nn::functional::mse_loss(currentQValues, targetQValues);
-			optimizer.zero_grad();
-			std::cout << "loss " << loss << std::endl;
-			loss.backward();
-			optimizer.step();
-
-		/*	k = policyNet->parameters();
-			for (auto& g : k)
-			{
-				std::cout << g;
-			}*/
-		
+		auto targetQValues = currentQValues.clone().to(this->device);
+		for (auto i = 0; i < batchSize; i++)
+		{
+			targetQValues[i][0][actions[i]] = (nextQValuesMaxValues[i][0] * gamma + rewards[i]);
+		}
+		//std::cout << "target Q" << targetQValues << std::endl;
+		//std::cout << "CURRENT Q" << currentQValues;
+		auto loss = torch::nn::functional::mse_loss(currentQValues[0], targetQValues[0]);
+		optimizer.zero_grad();
+		std::cout << "loss " << loss << std::endl;
+		loss.backward();
+		optimizer.step();
 	}
 	else
 		return; //wait for more experience
