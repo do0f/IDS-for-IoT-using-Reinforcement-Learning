@@ -23,9 +23,9 @@ enum class OperatingMode { Training, Testing };
 class Enviroment
 {
 public:
-	Enviroment(const std::string& file, OperatingMode mode);
+	Enviroment(const std::string& file);
 	Enviroment() = delete;
-	void reset();
+	bool reset();
 	double step(int action);
 	std::vector<float> Enviroment::getState();
 	bool isDone();

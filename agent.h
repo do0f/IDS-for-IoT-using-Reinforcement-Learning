@@ -14,7 +14,7 @@ public:
 	Agent() = delete;
 	~Agent();
 
-	int chooseAction(const torch::Tensor& state, DeepQNetwork& policyNet);
+	int chooseAction(const torch::Tensor& state, DeepQNetwork& policyNet, bool isGreedyPolicy = true);
 	void storeExperience(const Experience& experience);
 
 	void learn(DeepQNetwork& policyNet, DeepQNetwork& targetNet, torch::optim::Adam& optimizer);

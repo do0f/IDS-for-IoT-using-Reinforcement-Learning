@@ -54,15 +54,20 @@ std::pair<std::vector<float>, int> getData(std::ifstream& file) {
 	return std::make_pair(features, label);
 }
 
-Enviroment::Enviroment(const std::string& file, OperatingMode mode) : mode(mode)
+Enviroment::Enviroment(const std::string& file)
 {
 	fileStream.open(file);
 	getData(fileStream); //throw out first one
 }
-void Enviroment::reset() //new episode
+bool Enviroment::reset() //new episode
 {
 	stepNum = 0;
 	done = false;
+
+	if (fileStream.eof())
+		return 0;
+	else
+		return 1;
 }
 
 double Enviroment::step(int action)

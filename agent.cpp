@@ -17,14 +17,20 @@ Agent::~Agent()
 	std::clog << "Finished training" << std::endl;
 }
 
-int Agent::chooseAction(const torch::Tensor& state, DeepQNetwork& policyNet)
+int Agent::chooseAction(const torch::Tensor& state, DeepQNetwork& policyNet, bool isGreedyPolicy)
 {
-	double rand = std::rand();
-	if (epsilon > epsilonEnd)
-		epsilon -= epsilonDec;
-	std::cout << "EPSILON " << epsilon << std::endl;
-	if (rand / RAND_MAX > epsilon) //rand/RAND_MAX is a number between 0.0 and 1.0
-	//if(1)
+	bool exploit;
+	if (isGreedyPolicy)
+	{
+		double rand = std::rand();
+		if (epsilon > epsilonEnd)
+			epsilon -= epsilonDec;
+		std::cout << "EPSILON " << epsilon << std::endl;
+		exploit = rand / RAND_MAX > epsilon;
+	}
+	else
+		exploit = true;
+	if (exploit) //rand/RAND_MAX is a number between 0.0 and 1.0
 	{
 		return policyNet->forward(state).argmax(1).item<int>();
 	}
@@ -56,9 +62,7 @@ void Agent::learn(DeepQNetwork& policyNet, DeepQNetwork& targetNet, torch::optim
 		auto statesTensor = torch::stack({ states }).to(this->device);
 		auto newStatesTensor = torch::stack({ newStates }).to(this->device);
 
-		//auto currentQValues = policyNet->forward(statesTensor).gather(2, actionsTensor.unsqueeze(-1)).squeeze(-1);
 		auto currentQValues = policyNet->forward(statesTensor).to(this->device);
-		//std::cout << "cur Q" << currentQValues << std::endl;
 
 		auto nextQValues = targetNet->forward(newStatesTensor).to(this->device);
 		//std::cout << "next Q" << nextQValues << std::endl;
